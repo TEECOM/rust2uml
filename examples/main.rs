@@ -26,7 +26,7 @@ fn main() {
         --src_url_mask [str]: { help: "url mask for src links, eg http://host/crate/{file}, or 'none'" },
         --font [str]: { help: "Font name" },
     )
-    .launch();   
+    .launch();
 }
 
 fn run(ctx: &argi::Command, _: Option<String>) {
@@ -39,88 +39,87 @@ fn run(ctx: &argi::Command, _: Option<String>) {
 }
 
 fn command_to_config(ctx: &argi::Command) -> Config {
-
     let mut config = rust2uml::Config::default();
 
     match data!(bool, ctx => --include_fields) {
         Some(v) => config.include_fields = v,
-        None => {},
+        None => {}
     }
 
     match data!(bool, ctx => --include_implems) {
         Some(v) => config.include_implems = v,
-        None => {},
+        None => {}
     }
 
     match data!(bool, ctx => --include_methods) {
         Some(v) => config.include_methods = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --struct_header_bgcolor) {
         Some(v) => config.struct_header_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --struct_fields_bgcolor) {
         Some(v) => config.struct_fields_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --struct_method_bgcolor) {
         Some(v) => config.struct_method_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --struct_implem_bgcolor) {
         Some(v) => config.struct_implem_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --trait_header_bgcolor) {
         Some(v) => config.trait_header_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --trait_method_bgcolor) {
         Some(v) => config.trait_method_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --trait_implem_bgcolor) {
         Some(v) => config.trait_implem_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --enum_header_bgcolor) {
         Some(v) => config.enum_header_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --enum_fields_bgcolor) {
         Some(v) => config.enum_fields_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --enum_method_bgcolor) {
         Some(v) => config.enum_method_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --enum_implem_bgcolor) {
         Some(v) => config.enum_implem_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --font) {
         Some(v) => config.font_name = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --src_url_mask) {
         Some(v) if v == "none" => config.src_url_mask = "".to_string(),
         Some(v) => config.src_url_mask = v,
-        None => {},
+        None => {}
     }
 
     config
