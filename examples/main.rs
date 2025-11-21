@@ -6,9 +6,11 @@ use rust2uml::Config;
 use argi::{cli, data};
 
 fn main() {
-     cli!(
+    cli!(
         help: "Parses rust source code and generates UML diagram",
         run: (run),
+        --src_name [str]: {help: "Name of package"},
+        --src_dir [str]: {help: "Path to `src/` directory of package" },
         --include_fields [bool]: { help: "include fields/variants in diagram" },
         --include_implems [bool]: { help: "include trait implementation methods in diagram" },
         --include_methods [bool]: { help: "include methods in diagram" },
@@ -26,101 +28,111 @@ fn main() {
         --src_url_mask [str]: { help: "url mask for src links, eg http://host/crate/{file}, or 'none'" },
         --font [str]: { help: "Font name" },
     )
-    .launch();   
+    .launch();
 }
 
 fn run(ctx: &argi::Command, _: Option<String>) {
-    let dest: String = concat!("target/doc/", env!("CARGO_PKG_NAME")).to_string();  
+    let name_arg = data!(String, ctx => --src_name);
+    let package_name = match name_arg {
+        Some(v) => format!("{v}"),
+        _ => env!("CARGO_PKG_NAME").to_string(),
+    };
+
+    let dest: String = format!("target/doc/{package_name}");
 
     let config = command_to_config(ctx);
     rust2uml::Config::set_global(config);
 
-    let _ = rust2uml::src2both("src", dest.replace("-", "_").as_str());
+    let src_dir = match data!(String, ctx => --src_dir) {
+        Some(v) => v.to_string().clone(),
+        _ => "src".to_string(),
+    };
+
+    let _ = rust2uml::src2both(src_dir, dest.replace("-", "_"));
 }
 
 fn command_to_config(ctx: &argi::Command) -> Config {
-
     let mut config = rust2uml::Config::default();
 
     match data!(bool, ctx => --include_fields) {
         Some(v) => config.include_fields = v,
-        None => {},
+        None => {}
     }
 
     match data!(bool, ctx => --include_implems) {
         Some(v) => config.include_implems = v,
-        None => {},
+        None => {}
     }
 
     match data!(bool, ctx => --include_methods) {
         Some(v) => config.include_methods = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --struct_header_bgcolor) {
         Some(v) => config.struct_header_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --struct_fields_bgcolor) {
         Some(v) => config.struct_fields_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --struct_method_bgcolor) {
         Some(v) => config.struct_method_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --struct_implem_bgcolor) {
         Some(v) => config.struct_implem_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --trait_header_bgcolor) {
         Some(v) => config.trait_header_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --trait_method_bgcolor) {
         Some(v) => config.trait_method_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --trait_implem_bgcolor) {
         Some(v) => config.trait_implem_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --enum_header_bgcolor) {
         Some(v) => config.enum_header_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --enum_fields_bgcolor) {
         Some(v) => config.enum_fields_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --enum_method_bgcolor) {
         Some(v) => config.enum_method_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --enum_implem_bgcolor) {
         Some(v) => config.enum_implem_bgcolor = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --font) {
         Some(v) => config.font_name = v,
-        None => {},
+        None => {}
     }
 
     match data!(ctx => --src_url_mask) {
         Some(v) if v == "none" => config.src_url_mask = "".to_string(),
         Some(v) => config.src_url_mask = v,
-        None => {},
+        None => {}
     }
 
     config

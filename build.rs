@@ -6,8 +6,13 @@ fn main() {
             .output()
             .expect("failed to get rustc sysroot")
             .stdout;
-        let sysroot = String::from_utf8(sysroot).unwrap().trim().to_owned();
+        let _sysroot = String::from_utf8(sysroot).unwrap().trim().to_owned();
 
-        println!("cargo:rustc-link-arg=-Wl,-rpath={}/lib", sysroot);
+        // HACK: The linker is currently throwing errors at execution time
+        // when these args are present:
+        //
+        // note: ld: unknown options: -rpath=~/.rustup/nightly-2025-03-15-aarch64-apple-darwin/lib
+        //   clang: error: linker command failed with exit code 1 (use -v to see invocation)
+        // println!("cargo:rustc-link-arg=-Wl,-rpath={}/lib", sysroot);
     }
 }
