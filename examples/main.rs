@@ -6,9 +6,11 @@ use rust2uml::Config;
 use argi::{cli, data};
 
 fn main() {
-     cli!(
+    cli!(
         help: "Parses rust source code and generates UML diagram",
         run: (run),
+        --src_name [str]: {help: "Name of package"},
+        --src_dir [str]: {help: "Path to `src/` directory of package" },
         --include_fields [bool]: { help: "include fields/variants in diagram" },
         --include_implems [bool]: { help: "include trait implementation methods in diagram" },
         --include_methods [bool]: { help: "include methods in diagram" },
@@ -30,12 +32,23 @@ fn main() {
 }
 
 fn run(ctx: &argi::Command, _: Option<String>) {
-    let dest: String = concat!("target/doc/", env!("CARGO_PKG_NAME")).to_string();  
+    let name_arg = data!(String, ctx => --src_name);
+    let package_name = match name_arg {
+        Some(v) => format!("{v}"),
+        _ => env!("CARGO_PKG_NAME").to_string(),
+    };
+
+    let dest: String = format!("target/doc/{package_name}");
 
     let config = command_to_config(ctx);
     rust2uml::Config::set_global(config);
 
-    let _ = rust2uml::src2both("src", dest.replace("-", "_").as_str());
+    let src_dir = match data!(String, ctx => --src_dir) {
+        Some(v) => v.to_string().clone(),
+        _ => "src".to_string(),
+    };
+
+    let _ = rust2uml::src2both(src_dir, dest.replace("-", "_"));
 }
 
 fn command_to_config(ctx: &argi::Command) -> Config {
