@@ -6,7 +6,7 @@ fn main() {
             .output()
             .expect("failed to get rustc sysroot")
             .stdout;
-        let sysroot = String::from_utf8(sysroot).unwrap().trim().to_owned();
+        let _sysroot = String::from_utf8(sysroot).unwrap().trim().to_owned();
 
         // HACK: The linker is currently throwing errors at execution time
         // when these args are present:
