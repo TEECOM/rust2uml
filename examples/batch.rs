@@ -3,6 +3,7 @@
 
 use colored::Colorize;
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 
 fn main() {
@@ -13,12 +14,15 @@ fn main() {
         eprintln!(
             "{} {}",
             "Usage: ".yellow(),
-            "cargo run --example batch -- <path_to_local_runtime_directory>".blue()
+            "cargo run --example batch -- <path_to_local_runtime_directory> [--copy]".blue()
         );
         std::process::exit(1);
     }
 
     let runtime_path = PathBuf::from(&args[1]);
+
+    // Parse optional --copy flag
+    let should_copy = args.iter().any(|arg| arg == "--copy");
 
     if !runtime_path.exists() {
         eprintln!("Error: Path does not exist: {}", runtime_path.display());
@@ -70,7 +74,7 @@ fn main() {
     }
 
     // Process each module
-    for module in modules {
+    for module in &modules {
         let module_src_dir = runtime_path.join("src").join(module);
         let dest = format!("target/doc/{}", module);
 
@@ -86,4 +90,89 @@ fn main() {
     }
 
     println!("\nDone! UML diagrams have been generated in target/doc/");
+
+    // Copy to destination if specified
+    if should_copy {
+        // Calculate destination path relative to runtime path
+        let dest_path = runtime_path
+            .parent()
+            .expect("Runtime path should have a parent directory")
+            .join("documentation")
+            .join("runtime_architecture")
+            .join("module_uml");
+
+        println!("\nCopying diagrams to {}...", dest_path.display());
+        copy_diagrams_to_destination(&dest_path, &modules);
+    }
+}
+
+fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[&str]) {
+    // Create destination directory if it doesn't exist
+    if let Err(e) = fs::create_dir_all(dest_path) {
+        eprintln!("  ✗ Error creating destination directory: {}", e);
+        return;
+    }
+
+    let mut success_count = 0;
+    let mut error_count = 0;
+
+    // Copy main project (runtime)
+    let source = PathBuf::from("target/doc/runtime");
+    let dest = dest_path.join("runtime");
+
+    if source.exists() {
+        match copy_directory(&source, &dest) {
+            Ok(_) => {
+                println!("  ✓ Copied runtime diagrams");
+                success_count += 1;
+            }
+            Err(e) => {
+                eprintln!("  ✗ Error copying runtime: {}", e);
+                error_count += 1;
+            }
+        }
+    }
+
+    // Copy each module
+    for module in modules {
+        let source = PathBuf::from(format!("target/doc/{}", module));
+        let dest = dest_path.join(module);
+
+        if source.exists() {
+            match copy_directory(&source, &dest) {
+                Ok(_) => {
+                    println!("  ✓ Copied {} diagrams", module);
+                    success_count += 1;
+                }
+                Err(e) => {
+                    eprintln!("  ✗ Error copying {}: {}", module, e);
+                    error_count += 1;
+                }
+            }
+        }
+    }
+
+    println!(
+        "\nCopy complete: {} succeeded, {} failed",
+        success_count, error_count
+    );
+}
+
+fn copy_directory(src: &PathBuf, dest: &PathBuf) -> std::io::Result<()> {
+    fs::create_dir_all(dest)?;
+
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let file_type = entry.file_type()?;
+        let src_path = entry.path();
+        let dest_path = dest.join(entry.file_name());
+
+        if file_type.is_dir() {
+            copy_directory(&src_path, &dest_path)?;
+        } else {
+            fs::copy(&src_path, &dest_path)?;
+        }
+    }
+
+    Ok(())
 }
