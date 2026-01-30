@@ -1,6 +1,7 @@
 #![feature(rustc_private)]
 #![feature(box_patterns)]
 
+use colored::Colorize;
 use std::env;
 use std::path::PathBuf;
 
@@ -8,9 +9,11 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Usage: cargo run --example batch -- <path_to_runtime_directory>");
+        eprintln!("{}", "Error! No path configured!".black().on_red());
         eprintln!(
-            "Example: cargo run --example batch -- /Users/colin.matthews/repos/bacapp/runtime"
+            "{} {}",
+            "Usage: ".yellow(),
+            "cargo run --example batch -- <path_to_local_runtime_directory>".blue()
         );
         std::process::exit(1);
     }
