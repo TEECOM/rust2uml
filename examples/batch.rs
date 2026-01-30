@@ -66,7 +66,10 @@ fn main() {
     if src_dir.exists() {
         println!("Processing main project (runtime)...");
         match rust2uml::src2both(src_dir.to_str().unwrap().to_string(), dest.clone()) {
-            Ok(_) => println!("  ✓ Generated: {}/ml.dot", dest),
+            Ok(_) => {
+                rename_diagram_files(&dest, "runtime");
+                println!("  ✓ Generated: {}/runtime.dot", dest);
+            }
             Err(e) => eprintln!("  ✗ Error processing main project: {}", e),
         }
     } else {
@@ -81,7 +84,10 @@ fn main() {
         if module_src_dir.exists() {
             println!("Processing module: {}...", module);
             match rust2uml::src2both(module_src_dir.to_str().unwrap().to_string(), dest.clone()) {
-                Ok(_) => println!("  ✓ Generated: {}/ml.dot", dest),
+                Ok(_) => {
+                    rename_diagram_files(&dest, module);
+                    println!("  ✓ Generated: {}/{}.dot", dest, module);
+                }
                 Err(e) => eprintln!("  ✗ Error processing {}: {}", module, e),
             }
         } else {
@@ -103,6 +109,24 @@ fn main() {
 
         println!("\nCopying diagrams to {}...", dest_path.display());
         copy_diagrams_to_destination(&dest_path, &modules);
+    }
+}
+
+fn rename_diagram_files(dest_dir: &str, module_name: &str) {
+    let dest_path = PathBuf::from(dest_dir);
+
+    // Rename ml.dot to {module_name}.dot
+    let old_dot = dest_path.join("ml.dot");
+    let new_dot = dest_path.join(format!("{}.dot", module_name));
+    if old_dot.exists() {
+        let _ = fs::rename(&old_dot, &new_dot);
+    }
+
+    // Rename ml.svg to {module_name}.svg
+    let old_svg = dest_path.join("ml.svg");
+    let new_svg = dest_path.join(format!("{}.svg", module_name));
+    if old_svg.exists() {
+        let _ = fs::rename(&old_svg, &new_svg);
     }
 }
 
