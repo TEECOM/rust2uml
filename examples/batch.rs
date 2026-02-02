@@ -32,28 +32,6 @@ fn main() {
     let config = rust2uml::Config::default();
     rust2uml::Config::set_global(config);
 
-    // List of all modules to process
-    // let modules = vec![
-    //     "absolutebox",
-    //     "cable_route",
-    //     "clutch",
-    //     "demo_shape",
-    //     "display",
-    //     "fixture",
-    //     "item",
-    //     "layout",
-    //     "layout_item",
-    //     "message",
-    //     "metadata",
-    //     "model",
-    //     "section",
-    //     "shape",
-    //     "svg",
-    //     "system",
-    //     "tabular",
-    //     "traits",
-    // ];
-
     // Process main project (src)
     let src_dir = runtime_path.join("src");
     let dest = format!("target/doc/runtime");
