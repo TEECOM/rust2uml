@@ -33,35 +33,32 @@ fn main() {
     rust2uml::Config::set_global(config);
 
     // List of all modules to process
-    let modules = vec![
-        "absolutebox",
-        "cable_route",
-        "clutch",
-        "demo_shape",
-        "display",
-        "fixture",
-        "item",
-        "layout",
-        "layout_item",
-        "message",
-        "metadata",
-        "model",
-        "section",
-        "shape",
-        "svg",
-        "system",
-        "tabular",
-        "traits",
-    ];
-
-    println!(
-        "Generating UML diagrams for {} modules...\n",
-        modules.len() + 1
-    );
+    // let modules = vec![
+    //     "absolutebox",
+    //     "cable_route",
+    //     "clutch",
+    //     "demo_shape",
+    //     "display",
+    //     "fixture",
+    //     "item",
+    //     "layout",
+    //     "layout_item",
+    //     "message",
+    //     "metadata",
+    //     "model",
+    //     "section",
+    //     "shape",
+    //     "svg",
+    //     "system",
+    //     "tabular",
+    //     "traits",
+    // ];
 
     // Process main project (src)
     let src_dir = runtime_path.join("src");
     let dest = format!("target/doc/runtime");
+
+    let mut modules: Vec<String> = vec![];
 
     if src_dir.exists() {
         println!("Processing main project (runtime)...");
@@ -70,15 +67,48 @@ fn main() {
                 rename_diagram_files(&dest, "runtime");
                 println!("  ✓ Generated: {}/runtime.dot", dest);
             }
-            Err(e) => eprintln!("  ✗ Error processing main project: {}", e),
+            Err(e) => eprintln!("  ✗ Error processing main project: '{}'", e),
+        }
+
+        println!("Collecting list of modules...");
+
+        match fs::read_dir(src_dir) {
+            Ok(entries) => {
+                for entry in entries {
+                    match entry {
+                        Ok(dir_entry) => match dir_entry.file_type() {
+                            Ok(file_type) => {
+                                if file_type.is_dir() {
+                                    modules
+                                        .push(dir_entry.file_name().to_string_lossy().to_string());
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("  ✗ Error reading file type: '{}'", e);
+                            }
+                        },
+                        Err(e) => {
+                            eprintln!("  ✗ Error reading directory entry: '{}'", e);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("  ✗ Error reading directory: '{}'", e);
+            }
         }
     } else {
-        eprintln!("  ✗ Main src directory not found: {}", src_dir.display());
+        eprintln!("  ✗ Main src directory not found: '{}'", src_dir.display());
     }
+
+    println!(
+        "Generating UML diagrams for {} modules...\n",
+        modules.len() + 1
+    );
 
     // Process each module
     for module in &modules {
-        let module_src_dir = runtime_path.join("src").join(module);
+        let module_src_dir = runtime_path.join("src").join(module.as_str());
         let dest = format!("target/doc/{}", module);
 
         if module_src_dir.exists() {
@@ -87,15 +117,17 @@ fn main() {
                 Ok(_) => {
                     rename_diagram_files(&dest, module);
                     println!("  ✓ Generated: {}/{}.dot", dest, module);
+                    println!("  ✓ Generated: {}/{}.svg", dest, module);
                 }
-                Err(e) => eprintln!("  ✗ Error processing {}: {}", module, e),
+                Err(e) => eprintln!("  ✗ Error processing {}: '{}'", module, e),
             }
         } else {
-            eprintln!("  ✗ Module not found: {}", module_src_dir.display());
+            eprintln!("  ✗ Module not found: '{}'", module_src_dir.display());
         }
     }
 
-    println!("\nDone! UML diagrams have been generated in target/doc/");
+    let success_message = format!("\nDone! UML diagrams have been generated in target/doc/");
+    println!("{}", success_message.green());
 
     // Copy to destination if specified
     if should_copy {
@@ -130,10 +162,10 @@ fn rename_diagram_files(dest_dir: &str, module_name: &str) {
     }
 }
 
-fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[&str]) {
+fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[String]) {
     // Create destination directory if it doesn't exist
     if let Err(e) = fs::create_dir_all(dest_path) {
-        eprintln!("  ✗ Error creating destination directory: {}", e);
+        eprintln!("  ✗ Error creating destination directory: '{}'", e);
         return;
     }
 
@@ -151,7 +183,7 @@ fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[&str]) {
                 success_count += 1;
             }
             Err(e) => {
-                eprintln!("  ✗ Error copying runtime: {}", e);
+                eprintln!("  ✗ Error copying runtime: '{}'", e);
                 error_count += 1;
             }
         }
@@ -165,21 +197,22 @@ fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[&str]) {
         if source.exists() {
             match copy_directory(&source, &dest) {
                 Ok(_) => {
-                    println!("  ✓ Copied {} diagrams", module);
+                    println!("  ✓ Copied '{}' diagrams", module);
                     success_count += 1;
                 }
                 Err(e) => {
-                    eprintln!("  ✗ Error copying {}: {}", module, e);
+                    eprintln!("  ✗ Error copying {}: '{}'", module, e);
                     error_count += 1;
                 }
             }
         }
     }
 
-    println!(
-        "\nCopy complete: {} succeeded, {} failed",
+    let success_message = format!(
+        "\nCopy complete: {} succeeded, {} failed\n",
         success_count, error_count
     );
+    println!("{}", success_message.green());
 }
 
 fn copy_directory(src: &PathBuf, dest: &PathBuf) -> std::io::Result<()> {
