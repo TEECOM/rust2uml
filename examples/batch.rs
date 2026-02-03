@@ -113,9 +113,8 @@ fn main() {
         let dest_path = runtime_path
             .parent()
             .expect("Runtime path should have a parent directory")
-            .join("documentation")
-            .join("runtime_architecture")
-            .join("module_uml");
+            .join("runtime")
+            .join("diagram");
 
         println!("\nCopying diagrams to {}...", dest_path.display());
         copy_diagrams_to_destination(&dest_path, &modules);
@@ -152,10 +151,9 @@ fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[String]) {
 
     // Copy main project (runtime)
     let source = PathBuf::from("target/doc/runtime");
-    let dest = dest_path.join("runtime");
 
     if source.exists() {
-        match copy_directory(&source, &dest) {
+        match copy_directory(&source, dest_path) {
             Ok(_) => {
                 println!("  ✓ Copied runtime diagrams");
                 success_count += 1;
@@ -170,10 +168,9 @@ fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[String]) {
     // Copy each module
     for module in modules {
         let source = PathBuf::from(format!("target/doc/{}", module));
-        let dest = dest_path.join(module);
 
         if source.exists() {
-            match copy_directory(&source, &dest) {
+            match copy_directory(&source, dest_path) {
                 Ok(_) => {
                     println!("  ✓ Copied '{}' diagrams", module);
                     success_count += 1;
@@ -198,13 +195,10 @@ fn copy_directory(src: &PathBuf, dest: &PathBuf) -> std::io::Result<()> {
 
     for entry in fs::read_dir(src)? {
         let entry = entry?;
-        let file_type = entry.file_type()?;
         let src_path = entry.path();
-        let dest_path = dest.join(entry.file_name());
 
-        if file_type.is_dir() {
-            copy_directory(&src_path, &dest_path)?;
-        } else {
+        if src_path.is_file() && src_path.extension().and_then(|s| s.to_str()) == Some("svg") {
+            let dest_path = dest.join(entry.file_name());
             fs::copy(&src_path, &dest_path)?;
         }
     }
