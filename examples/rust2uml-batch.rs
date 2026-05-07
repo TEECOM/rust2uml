@@ -32,18 +32,25 @@ fn main() {
     let config = rust2uml::Config::default();
     rust2uml::Config::set_global(config);
 
+    // Derive the crate name from the directory name passed as the path argument
+    let crate_name = runtime_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("crate")
+        .to_string();
+
     // Process main project (src)
     let src_dir = runtime_path.join("src");
-    let dest = format!("target/doc/runtime");
+    let dest = format!("target/doc/{}", crate_name);
 
     let mut modules: Vec<String> = vec![];
 
     if src_dir.exists() {
-        println!("Processing main project (runtime)...");
+        println!("Processing main project ({})...", crate_name);
         match rust2uml::src2both(src_dir.to_str().unwrap().to_string(), dest.clone()) {
             Ok(_) => {
-                rename_diagram_files(&dest, "runtime");
-                println!("  ✓ Generated: {}/runtime.dot", dest);
+                rename_diagram_files(&dest, &crate_name);
+                println!("  ✓ Generated: {}/{}.dot", dest, crate_name);
             }
             Err(e) => eprintln!("  ✗ Error processing main project: '{}'", e),
         }
@@ -109,15 +116,11 @@ fn main() {
 
     // Copy to destination if specified
     if should_copy {
-        // Calculate destination path relative to runtime path
-        let dest_path = runtime_path
-            .parent()
-            .expect("Runtime path should have a parent directory")
-            .join("runtime")
-            .join("diagram");
+        // Calculate destination path: <crate_dir>/diagram/
+        let dest_path = runtime_path.join("diagram");
 
         println!("\nCopying diagrams to {}...", dest_path.display());
-        copy_diagrams_to_destination(&dest_path, &modules);
+        copy_diagrams_to_destination(&dest_path, &crate_name, &modules);
     }
 }
 
@@ -139,7 +142,7 @@ fn rename_diagram_files(dest_dir: &str, module_name: &str) {
     }
 }
 
-fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[String]) {
+fn copy_diagrams_to_destination(dest_path: &PathBuf, crate_name: &str, modules: &[String]) {
     // Create destination directory if it doesn't exist
     if let Err(e) = fs::create_dir_all(dest_path) {
         eprintln!("  ✗ Error creating destination directory: '{}'", e);
@@ -149,13 +152,13 @@ fn copy_diagrams_to_destination(dest_path: &PathBuf, modules: &[String]) {
     let mut success_count = 0;
     let mut error_count = 0;
 
-    // Copy main project (runtime)
-    let source = PathBuf::from("target/doc/runtime");
+    // Copy main project
+    let source = PathBuf::from(format!("target/doc/{}", crate_name));
 
     if source.exists() {
         match copy_directory(&source, dest_path) {
             Ok(_) => {
-                println!("  ✓ Copied runtime diagrams");
+                println!("  ✓ Copied {} diagrams", crate_name);
                 success_count += 1;
             }
             Err(e) => {
